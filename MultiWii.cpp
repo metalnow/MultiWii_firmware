@@ -55,8 +55,8 @@ const char boxnames[] PROGMEM = // names for dynamic generation of config GUI
 #ifdef VARIOMETER
   "VARIO;"
 #endif
-#if MAG
   "MAG;"
+#if defined(HEADFREE)  
   "HEADFREE;"
   "HEADADJ;"  
 #endif
@@ -110,8 +110,8 @@ const uint8_t boxids[] PROGMEM = {// permanent IDs associated to boxes. This way
 #ifdef VARIOMETER
   4, //"VARIO;"
 #endif
-#if MAG
   5, //"MAG;"
+#if defined(HEADFREE)
   6, //"HEADFREE;"
   7, //"HEADADJ;"  
 #endif
@@ -1090,30 +1090,30 @@ void loop () {
       }
 #endif
 #endif
-#if MAG
-    if (rcOptions[BOXMAG]) {
-      if (!f.MAG_MODE) {
-        f.MAG_MODE = 1;
-        magHold = att.heading;
-        }
-      } else {
-        f.MAG_MODE = 0;
+  if (rcOptions[BOXMAG]) {
+    if (!f.MAG_MODE) {
+      f.MAG_MODE = 1;
+      magHold = att.heading;
       }
+    } else {
+      f.MAG_MODE = 0;
+    }
+#if defined(HEADFREE)
     if (rcOptions[BOXHEADFREE]) {
       if (!f.HEADFREE_MODE) {
         f.HEADFREE_MODE = 1;
-        }
+      }
 #if defined(ADVANCED_HEADFREE)
       if ((f.GPS_FIX && GPS_numSat >= 5) && (GPS_distanceToHome > ADV_HEADFREE_RANGE) ) {
         if (GPS_directionToHome < 180)  {headFreeModeHold = GPS_directionToHome + 180;} else {headFreeModeHold = GPS_directionToHome - 180;}
-        }
-#endif
-      } else {
-        f.HEADFREE_MODE = 0;
       }
+#endif
+    } else {
+      f.HEADFREE_MODE = 0;
+    }
     if (rcOptions[BOXHEADADJ]) {
       headFreeModeHold = att.heading; // acquire new heading
-      }
+    }
 #endif
 #if GPS
     // This handles the three rcOptions boxes 
@@ -1335,21 +1335,12 @@ void loop () {
 
 #endif
 
-
-
-
-
-
-#if MAG
   if (abs(rcCommand[YAW]) <70 && f.MAG_MODE) {
-
     int16_t dif = att.heading - magHold;
     if (dif <= - 180) dif += 360;
     if (dif >= + 180) dif -= 360;
-
     if ( f.SMALL_ANGLES_25 || (f.GPS_mode != 0)) rcCommand[YAW] -= dif*conf.pid[PIDMAG].P8>>5;  //Always correct maghold in GPS mode
     } else magHold = att.heading;
-#endif
 
 #if BARO && (!defined(SUPPRESS_BARO_ALTHOLD))
   /* Smooth alt change routine , for slow auto and aerophoto modes (in general solution from alexmos). It's slowly increase/decrease 

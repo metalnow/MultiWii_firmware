@@ -42,8 +42,8 @@ enum box {
   #ifdef VARIOMETER
     BOXVARIO,
   #endif
-  #if MAG
-    BOXMAG,
+  BOXMAG,
+  #if defined(HEADFREE)
     BOXHEADFREE,
     BOXHEADADJ, // acquire heading for HEADFREE mode
   #endif

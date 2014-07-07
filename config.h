@@ -558,6 +558,9 @@
 
   #define THROTTLE_ANGLE_CORRECTION 40
 
+  /*** HEADFREE : the copter can be controled by an absolute stick orientation, whatever the yaw orientation ***/
+  #define HEADFREE
+  
   /*************************        Advanced Headfree Mode             ********************/
   /* In Advanced Headfree mode when the copter is farther than ADV_HEADFREE_RANGE meters then 
   the  bearing between home and copter position will become the control direction 
@@ -588,7 +591,7 @@
 
   /********                          Failsafe settings                 ********************/
   /* Failsafe check pulses on four main control channels CH1-CH4. If the pulse is missing or bellow 985us (on any of these four channels) 
-  the failsafe procedure is initiated. After FAILSAFE_DELAY time from failsafe detection, the level mode is on (if ACC or nunchuk is avaliable),
+  the failsafe procedure is initiated. After FAILSAFE_DELAY time from failsafe detection, the level mode is on (if ACC is avaliable),
   PITCH, ROLL and YAW is centered and THROTTLE is set to FAILSAFE_THROTTLE value. You must set this value to descending about 1m/s or so
   for best results. This value is depended from your configuration, AUW and some other params.  Next, after FAILSAFE_OFF_DELAY the copter is disarmed, 
   and motors is stopped. If RC pulse coming back before reached FAILSAFE_OFF_DELAY time, after the small quard time the RC control is returned to normal. */
