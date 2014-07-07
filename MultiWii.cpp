@@ -263,7 +263,6 @@ uint8_t telemetryStepIndex = 0;
 #define THR_CE  (3<<(2*THROTTLE))
 #define THR_HI  (2<<(2*THROTTLE))
 
-int16_t failsafeEvents = 0;
 volatile int16_t failsafeCnt = 0;
 
 int16_t rcData[RC_CHANS];    // interval [1000;2000]
@@ -299,6 +298,8 @@ static uint8_t dynP8[2], dynD8[2];
 global_conf_t global_conf;
 
 conf_t conf;
+
+failsafe_t failsafe;
 
 #ifdef LOG_PERMANENT
 plog_t plog;
@@ -746,7 +747,15 @@ void setup() {
 #endif
 
   debugmsg_append_str("initialization completed\n");
-  }
+}
+
+#if BARO
+void resetAltHold() {
+   errorAltitudeI = 0;         // clear all ALT_HOLD code values to default of OFF
+   BaroPID = 0;
+   AltHold = alt.EstAlt;
+}
+#endif
 
 void go_arm() {
   if(calibratingG == 0
@@ -793,7 +802,7 @@ void go_disarm() {
 #ifdef LOG_PERMANENT
     plog.disarm++;        // #disarm events
     plog.armed_time = armedTime ;   // lifetime in seconds
-    if (failsafeEvents) plog.failsafe++;      // #acitve failsafe @ disarm
+    if (failsafe.events) plog.failsafe++;      // #acitve failsafe @ disarm
     if (i2c_errors_count > 10) plog.i2c++;           // #i2c errs @ disarm
     plog.running = 0;       // toggle @ arm & disarm to monitor for clean shutdown vs. powercut
     // write now.
@@ -849,20 +858,48 @@ void loop () {
     rcTime = currentTime + 20000;
     computeRC();
     // Failsafe routine - added by MIS
-#if defined(FAILSAFE)
-    if ( failsafeCnt > (5*FAILSAFE_DELAY) && f.ARMED) {                  // Stabilize, and set Throttle to specified level
+  #if defined(FAILSAFE)
+    if (failsafeCnt > (5*FAILSAFE_DELAY)) {failsafe.active = 1;} else {failsafe.active = 0;}
+    if ( failsafe.active && f.ARMED) {                  // Stabilize, and set Throttle to specified level
       for(i=0; i<3; i++) rcData[i] = MIDRC;                               // after specified guard time after RC signal is lost (in 0.1sec)
-      rcData[THROTTLE] = conf.failsafe_throttle;
-      if (failsafeCnt > 5*(FAILSAFE_DELAY+FAILSAFE_OFF_DELAY)) {          // Turn OFF motors after specified Time (in 0.1sec)
-        go_disarm();     // This will prevent the copter to automatically rearm if failsafe shuts it down and prevents
-        f.OK_TO_ARM = 0; // to restart accidentely by just reconnect to the tx - you will have to switch off first to rearm
-        }
-      failsafeEvents++;
+            
+      #if (defined(FAILSAFE_ALT_MODE) || defined(FAILSAFE_RTH_MODE)) && BARO
+          rcData[THROTTLE] = rcCommand[THROTTLE];
+      #else
+          rcData[THROTTLE] = conf.failsafe_throttle;
+      #endif      
+      
+      if ((failsafeCnt > 5*(FAILSAFE_DELAY+FAILSAFE_OFF_DELAY)) 
+        #if (defined(FAILSAFE_ALT_MODE) || defined(FAILSAFE_RTH_MODE)) && BARO
+          || (BaroPID < -300)                           // Turn off motors after landing or when hit something in RTH mode
+        #endif
+      ) {          // Turn OFF motors after specified Time (in 0.1sec)
+          go_disarm();     // This will prevent the copter to automatically rearm if failsafe shuts it down and prevents
+          f.OK_TO_ARM = 0; // to restart accidentely by just reconnect to the tx - you will have to switch off first to rearm
       }
-    if ( failsafeCnt > (5*FAILSAFE_DELAY) && !f.ARMED) {  //Turn of "Ok To arm to prevent the motors from spinning after repowering the RX with low throttle and aux to arm
+        
+      failsafe.events++;
+    }
+    #if (defined(FAILSAFE_RTH_MODE) || defined(FAILSAFE_ALT_MODE)) && BARO
+    else if (failsafe.altSet
+      #if defined(FAILSAFE_RTH_MODE)
+        || failsafe.confSet
+      #endif   
+    ) {
+      failsafe.altSet = 0;
+      #if defined(FAILSAFE_RTH_MODE)        
+         failsafe.confSet = 0;
+         failsafe.atHomeDelay = 0;
+         failsafe.atHome      = 0;
+      #endif
+      resetAltHold();
+    }
+  #endif
+    
+    if ( failsafe.active && !f.ARMED) {  //Turn of "Ok To arm to prevent the motors from spinning after repowering the RX with low throttle and aux to arm
       go_disarm();     // This will prevent the copter to automatically rearm if failsafe shuts it down and prevents
       f.OK_TO_ARM = 0; // to restart accidentely by just reconnect to the tx - you will have to switch off first to rearm
-      }
+    }
     failsafeCnt++;
 #endif
     // end of failsafe routine - next change is made with RcOptions setting
@@ -1030,7 +1067,7 @@ void loop () {
 
     // note: if FAILSAFE is disable, failsafeCnt > 5*FAILSAFE_DELAY is always false
 #if ACC
-    if ( rcOptions[BOXANGLE] || (failsafeCnt > 5*FAILSAFE_DELAY) ) { 
+    if ( rcOptions[BOXANGLE] || failsafe.active ) { 
       // bumpless transfer to Level mode
       if (!f.ANGLE_MODE) {
         errorAngleI[ROLL] = 0; errorAngleI[PITCH] = 0;
@@ -1040,7 +1077,7 @@ void loop () {
         // failsafe support
         f.ANGLE_MODE = 0;
       }
-    if ( rcOptions[BOXHORIZON] ) {
+    if ( rcOptions[BOXHORIZON] && !failsafe.active) {
       f.ANGLE_MODE = 0;
       if (!f.HORIZON_MODE) {
         errorAngleI[ROLL] = 0; errorAngleI[PITCH] = 0;
@@ -1064,21 +1101,23 @@ void loop () {
     if (GPS_conf.takeover_baro) rcOptions[BOXBARO] = (rcOptions[BOXBARO] || f.GPS_BARO_MODE);
 #endif
 #if (!defined(SUPPRESS_BARO_ALTHOLD))
-    if (rcOptions[BOXBARO]) {
+    if (rcOptions[BOXBARO] 
+      #if defined(FAILSAFE) && (defined(FAILSAFE_RTH_MODE) || defined(FAILSAFE_ALT_MODE))       
+          && !failsafe.active             //to avoid altitude calculations and resetAltHold during FAILSAFE
+      #endif
+      ) {
       if (!f.BARO_MODE) {
-        f.BARO_MODE = 1;
-        AltHold = alt.EstAlt;
+        f.BARO_MODE = 1;        
 #if defined(ALT_HOLD_THROTTLE_MIDPOINT)
         initialThrottleHold = ALT_HOLD_THROTTLE_MIDPOINT;
 #else
         initialThrottleHold = rcCommand[THROTTLE];
 #endif
-        errorAltitudeI = 0;
-        BaroPID=0;
-        }
-      } else {
-        f.BARO_MODE = 0;
+        resetAltHold();
       }
+    } else {
+      f.BARO_MODE = 0;
+    }
 #endif
 #ifdef VARIOMETER
     if (rcOptions[BOXVARIO]) {
@@ -1090,7 +1129,7 @@ void loop () {
       }
 #endif
 #endif
-  if (rcOptions[BOXMAG]) {
+  if (rcOptions[BOXMAG] || failsafe.active) {
     if (!f.MAG_MODE) {
       f.MAG_MODE = 1;
       magHold = att.heading;
@@ -1126,40 +1165,39 @@ void loop () {
     if (f.ARMED ) {                       //Check GPS status and armed
       //TODO: implement f.GPS_Trusted flag, idea from Dramida - Check for degraded HDOP and sudden speed jumps
       if (f.GPS_FIX) {
-        if (GPS_numSat >5 ) {
-
+        if (GPS_numSat > 5 ) {
           if (prv_gps_modes != gps_modes_check) {                           //Check for change since last loop
             NAV_error = NAV_ERROR_NONE;
             if (rcOptions[BOXGPSHOME])									// RTH has the priotity over everything else
-              {
+            {
               init_RTH();
-              }
+            }
             else if (rcOptions[BOXGPSHOLD])								//Position hold has priority over mission execution
-              {                                                         //But has less priority than RTH
+            {                                                         //But has less priority than RTH
 #if defined(I2C_GPS)
               f.GPS_mode = GPS_MODE_HOLD;
               GPS_I2C_command(I2C_GPS_COMMAND_POSHOLD,0);
 #else
               if (f.GPS_mode == GPS_MODE_NAV)
-                { NAV_paused_at = mission_step.number; }
+              { NAV_paused_at = mission_step.number; }
               f.GPS_mode = GPS_MODE_HOLD;
-              GPS_set_next_wp(&GPS_coord[LAT], &GPS_coord[LON],&GPS_coord[LAT], & GPS_coord[LON]);		//hold at the current position
+              GPS_set_next_wp(&GPS_coord[LAT], &GPS_coord[LON], &GPS_coord[LAT], & GPS_coord[LON]);		//hold at the current position
               set_new_altitude(alt.EstAlt);							//and current altitude
               NAV_state = NAV_STATE_HOLD_INFINIT;
 #endif
-              }
+            }
 #if !defined(I2C_GPS)
             else if (rcOptions[BOXLAND])									//Land now
-              {
+            {
               f.GPS_mode = GPS_MODE_HOLD;
               f.GPS_BARO_MODE = true;
               GPS_set_next_wp(&GPS_coord[LAT], &GPS_coord[LON],&GPS_coord[LAT], & GPS_coord[LON]);	
               set_new_altitude(alt.EstAlt);
               NAV_state = NAV_STATE_LAND_START;
-              }
+            }
 #endif
             else if (rcOptions[BOXGPSNAV])								//Start navigation
-              {
+            {
 #if defined(I2C_GPS)
               GPS_I2C_command(I2C_GPS_COMMAND_POSHOLD,0);				//Poshold with I2CGPS
 #else
@@ -1168,20 +1206,20 @@ void loop () {
               GPS_prev[LAT] = GPS_coord[LAT];
               GPS_prev[LON] = GPS_coord[LON];
               if (NAV_paused_at != 0) 
-                {
+              {
                 next_step = NAV_paused_at;
                 NAV_paused_at = 0;									//Clear paused step 
-                } 
+              } 
               else 
-                {
+              {
                 next_step = 1;
                 jump_times = -10;									//Reset jump counter
-                }
+              }
               NAV_state = NAV_STATE_PROCESS_NEXT;
 #endif
-              }
+            }
             else                                                          //None of the GPS Boxes are switched on
-              {
+            {
               f.GPS_mode = GPS_MODE_NONE;
               f.GPS_BARO_MODE = false;
               f.THROTTLE_IGNORED = false;
@@ -1191,15 +1229,14 @@ void loop () {
               NAV_state = NAV_STATE_NONE;
 #endif
               GPS_reset_nav();
-              }
-            prv_gps_modes = gps_modes_check;
             }
-          } //numSat>5 
-
+            prv_gps_modes = gps_modes_check;
+          }
+        } //numSat>5 
         else 
-          { //numSat dropped below 5 during navigation
+        { //numSat dropped below 5 during navigation
           if (f.GPS_mode == GPS_MODE_NAV) 
-            {
+          {
             NAV_paused_at = mission_step.number;
             f.GPS_mode = GPS_MODE_NONE;
             set_new_altitude(alt.EstAlt);							//and current altitude
@@ -1207,19 +1244,19 @@ void loop () {
             NAV_error = NAV_ERROR_SPOILED_GPS;
             prv_gps_modes = 0xff;									//invalidates mode check, to allow re evaluate rcOptions when numsats raised again
 
-            }
+          }
           if (f.GPS_mode == GPS_MODE_HOLD || f.GPS_mode == GPS_MODE_RTH)
-            {
+          {
             f.GPS_mode = GPS_MODE_NONE;
             NAV_state = NAV_STATE_NONE;
             NAV_error = NAV_ERROR_SPOILED_GPS;
             prv_gps_modes = 0xff;									//invalidates mode check, to allow re evaluate rcOptions when numsats raised again
-            }
-          nav[0] = 0; nav[1] = 0;
           }
-        } //f.GPS_FIX
+          nav[0] = 0; nav[1] = 0;
+        }
+      } //f.GPS_FIX
       else  // GPS Fix dissapeared, very unlikely that we will be able to regain it, abort mission
-        {
+      {
         f.GPS_mode = GPS_MODE_NONE;				
 #if !defined(I2C_GPS)
         NAV_state = NAV_STATE_NONE;
@@ -1228,10 +1265,10 @@ void loop () {
 #endif
         GPS_reset_nav();
         prv_gps_modes = 0xff;				//Gives a chance to restart mission when regain fix
-        }
-      }  //copter is armed
+      }
+    }  //copter is armed
     else   //copter is disarmed
-      {																	
+    {																	
       f.GPS_mode = GPS_MODE_NONE;				
       f.GPS_BARO_MODE = false;
       f.THROTTLE_IGNORED = false;
@@ -1241,19 +1278,16 @@ void loop () {
       NAV_error = NAV_ERROR_DISARMED;
 #endif
       GPS_reset_nav();
-      }
+    }
 
 #endif
-
-
-
 
 #if defined(FIXEDWING) || defined(HELICOPTER)
     if (rcOptions[BOXPASSTHRU]) {f.PASSTHRU_MODE = 1;}
     else {f.PASSTHRU_MODE = 0;}
 #endif
 
-    } else { // not in rc loop
+  } else { // not in rc loop
       static uint8_t taskOrder=0; // never call all functions in the same loop, to avoid high delay spikes
       if(taskOrder>4) taskOrder-=5;
       switch (taskOrder) {
@@ -1291,7 +1325,7 @@ void loop () {
 #endif
           break;
         }
-    }
+  }
 
   computeIMU();
   // Measure loop rate just afer reading the sensors
@@ -1368,8 +1402,8 @@ void loop () {
         }
       isAltHoldChanged = 1;
       } else if (isAltHoldChanged) {
-        AltHold = alt.EstAlt;
         isAltHoldChanged = 0;
+        resetAltHold();        
       }
 
     rcCommand[THROTTLE] = initialThrottleHold + BaroPID;

@@ -2,14 +2,14 @@
 #define SENSORS_H_
 
 #if defined(MMA7455) || defined(MMA8451Q) || defined(ADXL345) || \
-    defined(BMA180) || defined(BMA280) || defined(BMA020) || defined(NUNCHACK) || \
+    defined(BMA180) || defined(BMA280) || defined(BMA020) || \
     defined(LIS3LV02) || defined(LSM303DLx_ACC) || defined(ADCACC) || \
-    defined(MPU6050) || defined(LSM330) || defined(NUNCHUCK)
+    defined(MPU6050) || defined(LSM330)
 void ACC_getADC ();
 #endif
 
 #if defined(L3G4200D) || defined(ITG3200) || defined(MPU6050) || defined(LSM330) || \
-    defined(MPU3050) || defined(WMP) || defined(NUNCHUCK)
+    defined(MPU3050) || defined(WMP)
 void Gyro_getADC ();
 #endif
 
@@ -53,9 +53,6 @@ uint8_t i2c_readNak();
 #if defined(BMA020)
   #define ACC_1G 63
 #endif
-#if defined(NUNCHACK)
-  #define ACC_1G 200
-#endif
 #if defined(LIS3LV02)
   #define ACC_1G 256
 #endif
@@ -77,9 +74,6 @@ uint8_t i2c_readNak();
 #endif
 #if defined(NUNCHUCK)
   #define ACC_1G 200
-#endif
-#if !defined(ACC_1G)
-  #define ACC_1G 256
 #endif
 #define ACCZ_25deg   (int16_t)(ACC_1G * 0.90631) // 0.90631 = cos(25deg) (cos(theta) of accZ comparison)
 #define ACC_VelScale (9.80665f / 10000.0f / ACC_1G)

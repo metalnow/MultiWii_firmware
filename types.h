@@ -222,6 +222,19 @@ typedef struct {
 } plog_t;
 #endif
 
+typedef struct {
+  int16_t events;
+  uint8_t active;   // Failsafe mode status - replace (failsafeCnt > (5*FAILSAFE_DELAY))
+  #if BARO && defined(FAILSAFE) && (defined(FAILSAFE_ALT_MODE) || defined(FAILSAFE_RTH_MODE))
+    uint8_t  altSet;
+    #if defined(FAILSAFE_RTH_MODE)
+      uint8_t  confSet;
+      uint8_t  atHome;
+      uint32_t atHomeDelay;
+    #endif
+  #endif  
+} failsafe_t;
+
 #if GPS
 
 // TODO: cross check with I2C gps and add relevant defines

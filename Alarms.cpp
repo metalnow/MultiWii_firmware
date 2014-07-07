@@ -71,11 +71,11 @@ void alarmHandler(void){
   #endif  
      
   #if defined(FAILSAFE)
-    if ( failsafeCnt > (5*FAILSAFE_DELAY) && f.ARMED) {
+    if ( failsafe.active && f.ARMED) {
       alarmArray[1] = 1;                                                                   //set failsafe warning level to 1 while landing
       if (failsafeCnt > 5*(FAILSAFE_DELAY+FAILSAFE_OFF_DELAY)) alarmArray[1] = 2;          //start "find me" signal after landing   
     }
-    if ( failsafeCnt > (5*FAILSAFE_DELAY) && !f.ARMED) alarmArray[1] = 2;                  // tx turned off while motors are off: start "find me" signal
+    if ( failsafe.active && !f.ARMED) alarmArray[1] = 2;                  // tx turned off while motors are off: start "find me" signal
     if ( failsafeCnt == 0) alarmArray[1] = 0;                                              // turn off alarm if TX is okay
   #endif
   
@@ -526,6 +526,26 @@ void blinkLED(uint8_t num, uint8_t ontime,uint8_t repeat) {
   void led_flasher_autoselect_sequence() {
     if (led_flasher_control != LED_FLASHER_AUTO) return;
 
+    #if defined(LED_FLASHER_SEQUENCE_FAILSAFE) && defined(FAILSAFE)//NHADRIAN - failsafe LED sequence
+      if (failsafe.active) {
+        led_flasher_set_sequence(LED_FLASHER_SEQUENCE_FAILSAFE);
+        return;
+      }
+    #endif
+
+    #if defined(LED_FLASHER_SEQUENCE_VBAT_WARN2) && defined(VBATLEVEL_WARN2) && defined(VBAT) //NHADRIAN - VBAT2 alarm LED sequence
+      if (analog.vbat < conf.vbatlevel_warn2) {
+        led_flasher_set_sequence(LED_FLASHER_SEQUENCE_VBAT_WARN2);
+        return;
+      }
+    #endif
+
+    #if defined(LED_FLASHER_SEQUENCE_VBAT_WARN1) && defined(VBATLEVEL_WARN1) && defined(VBAT) //NHADRIAN - VBAT1 alarm LED sequence
+      if (analog.vbat < conf.vbatlevel_warn1) {
+        led_flasher_set_sequence(LED_FLASHER_SEQUENCE_VBAT_WARN1);
+        return;
+      }
+    #endif
     #if defined(LED_FLASHER_SEQUENCE_MAX)
     /* do we want the complete illumination no questions asked? */
     if (rcOptions[BOXLEDMAX]) {

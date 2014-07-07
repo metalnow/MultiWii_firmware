@@ -167,13 +167,11 @@
   //#define LSM330        //combo + ACC
 
   /* I2C accelerometer */
-  //#define NUNCHUCK  // if you want to use the nunckuk connected to a WMP
   //#define MMA7455
   //#define ADXL345
   //#define BMA020
   //#define BMA180
   //#define BMA280
-  //#define NUNCHACK  // if you want to use the nunckuk as a standalone I2C ACC without WMP
   //#define LIS3LV02
   //#define LSM303DLx_ACC
   //#define MMA8451Q
@@ -210,6 +208,9 @@
   //#define SENSORS_TILT_45DEG_LEFT         // rotate the FRONT 45 degres counterclockwise
 
 
+
+
+
   /*************************************************************************************************/
   /*****************                                                                 ***************/
   /****************  SECTION  2 - COPTER TYPE SPECIFIC OPTIONS                               *******/
@@ -231,7 +232,7 @@
   /********************************    ARM/DISARM    *********************************/
   /* optionally disable stick combinations to arm/disarm the motors.
   * In most cases one of the two options to arm/disarm via TX stick is sufficient */
-  //#define ALLOW_ARM_DISARM_VIA_TX_YAW
+  #define ALLOW_ARM_DISARM_VIA_TX_YAW
   //#define ALLOW_ARM_DISARM_VIA_TX_ROLL
 
   /********************************    SERVOS      *********************************/
@@ -244,6 +245,9 @@
   * landing gear
   */
   #define DISABLE_SERVOS_WHEN_UNARMED
+
+
+
 
 
   /* if you want to preset min/middle/max values for servos right after flashing, because of limited physical
@@ -283,6 +287,8 @@
   //#define GOVERNOR_P 7     // (*) proportional factor. Higher value -> higher throttle increase. Must be >=1; 0 = turn off
   //#define GOVERNOR_D 4     // (*) decay timing. Higher value -> takes longer to return throttle to normal. Must be >=1;
 
+
+
   //#define VOLTAGEDROP_COMPENSATION // voltage impact correction
 
   /***********************          Heli                           ***********************/
@@ -321,6 +327,9 @@
   //#define MY_PRIVATE_DEFAULTS "filename.h"
 
 
+
+
+
   /*************************************************************************************************/
   /*****************                                                                 ***************/
   /****************  SECTION  3 - RC SYSTEM SETUP                                            *******/
@@ -343,7 +352,10 @@
   At this moment you can use this function only with WinGUI 2.3 release. MultiWiiConf does not support it yet
   */
 
+
+
   //#define EXTENDED_AUX_STATES
+
 
 
   /**************************************************************************************/
@@ -484,8 +496,8 @@
 
   /******                Serial com speed    *********************************/
   /* This is the speed of the serial interfaces */
-  #define SERIAL0_COM_SPEED 57600
-  #define SERIAL1_COM_SPEED 57600
+  #define SERIAL0_COM_SPEED 115200
+  #define SERIAL1_COM_SPEED 115200
   #define SERIAL2_COM_SPEED 115200
   #define SERIAL3_COM_SPEED 115200
 
@@ -596,11 +608,33 @@
   for best results. This value is depended from your configuration, AUW and some other params.  Next, after FAILSAFE_OFF_DELAY the copter is disarmed, 
   and motors is stopped. If RC pulse coming back before reached FAILSAFE_OFF_DELAY time, after the small quard time the RC control is returned to normal. */
   //#define FAILSAFE                                // uncomment  to activate the failsafe function
-  #define FAILSAFE_DELAY     10                     // Guard time for failsafe activation after signal lost. 1 step = 0.1sec - 1sec in example
-  #define FAILSAFE_OFF_DELAY 200                    // Time for Landing before motors stop in 0.1sec. 1 step = 0.1sec - 20sec in example
+  #define FAILSAFE_DELAY     5                      // Guard time for failsafe activation after signal lost. 1 step = 0.1sec - 1sec in example
+  #define FAILSAFE_OFF_DELAY 1000                   // Time for Landing before motors stop in 0.1sec. 1 step = 0.1sec - 20sec in example
   #define FAILSAFE_THROTTLE  (MINTHROTTLE + 200)    // (*) Throttle level used for landing - may be relative to MINTHROTTLE - as in this case
 
-  #define FAILSAFE_DETECT_TRESHOLD  985
+  /*****************                Failsafe descending to the ground by BARO          *********************************/
+  /* For vario-controlled descending instead of having a fix throttle value, uncomment FAILSAFE_ALT_MODE. This allows to descend with preset vario. 
+     When flying on high altitudes, and would like to descend faster than apply FAILSAFE_SAFE_ALT and FAILSAFE_FAST_VARIO. 
+       This case will let copter descend faster from high altitude till reach the safety altitude, after will slow down to slow vario.
+     If you have GPS and would like to have RTH activated when in failsafe, uncomment FAILSAFE_RTH_MODE. Please note that in this case FAILSAFE_ALT_MODE doesn't have to be uncommented, 
+       if GPS signal is weak, failsafe will work in FAILSAFE_ALT_MODE. 
+     Both with work only with FAILSAFE uncommented! Also Please note that both modes will work even if SUPPRESS_BARO_ALTHOLD is uncommented, so you can still save some space with better failsafe alt handling! 
+
+     Please note that FAILSAE_OFF_DELAY is still active for security reasons, so set up long time enough to be able to RTH before this timer ends because motors will stop!!!*/
+  
+  //#define FAILSAFE_ALT_MODE             // uncomment for descending with constant vario if in Failsafe - use with FAILSAFE and define the FAILSAFE_SLOW_VARIO
+  #define FAILSAFE_SLOW_VARIO   50      // in cm/s - slow desceding speed under SAFETY_ALT, this is default is SAFETY_ALT is not used.  - maximum 250!!!
+  #define FAILSAFE_FAST_VARIO   100     // in cm/s - fast desceding speed over SAFETY_ALT, maximum 250!!!
+  #define FAILSAFE_SAFETY_ALT   100     // in cm   - safety altitude, where to slow down descending before landing, in cm!!!
+
+  //#define FAILSAFE_RTH_MODE             // if GPS present and ready, copter starts RTH when signal lost. When signal is back, control is back again. 
+  #define FAILSAFE_RTH_VARIO    100     // in cm/s - vario for RTH function for failsafe, maximum 250!!!
+  #define FAILSAFE_RTH_ALT      1000    // in cm   - minimum RTH altitude for failsafe. If copter is higher than this, it will keep altitude.
+  #define FAILSAFE_RTH_HOME     400     // in cm   - home altitude for RTH, copter will descend to this altitude and wait.
+  #define FAILSAFE_RTH_DELAY    15      // in s    - safety delay, after reaching HOME altitude, it'll land in FAILSAFE_ALT_MODE when safety delay terminates.
+  #define FAILSAFE_DETECT_TRESHOLD  985 //Failsafe threshold (in us)
+
+
 
 
   /*****************                DFRobot LED RING    *********************************/
@@ -617,6 +651,7 @@
   //#define LED_FLASHER_SEQUENCE_ARMED  0b00000101      // create double flashes
   //#define LED_FLASHER_SEQUENCE_MAX    0b11111111      // full illumination
   //#define LED_FLASHER_SEQUENCE_LOW    0b00000000      // no illumination
+  //#define LED_FLASHER_SEQUENCE_FAILSAFE     0b01010101      // Failsafe LED sequence - USE together with LED_FLASHER_SEQUENCE
 
 
   /*******************************    Landing lights    *********************************/
@@ -651,6 +686,7 @@
   Must be greater than zero, comment if you dont want a deadband on roll, pitch and yaw */
   //#define DEADBAND 6
 
+
   /**************************************************************************************/
   /***********************                  GPS                **************************/
   /**************************************************************************************/
@@ -663,11 +699,11 @@
   in NMEA mode the GPS must be configured to output GGA and RMC NMEA sentences (which is generally the default conf for most GPS devices)
   at least 5Hz update rate. uncomment the first line to select the GPS serial port of the arduino */
 
-  #define GPS_SERIAL 2         // should be 2 for flyduino v2. It's the serial port number on arduino MEGA
+  //#define GPS_SERIAL 2         // should be 2 for flyduino v2. It's the serial port number on arduino MEGA
   //#define GPS_PROMINI_SERIAL   // Will Autosense if GPS is connected when ardu boots.
 
   // avoid using 115200 baud because with 16MHz arduino the 115200 baudrate have more than 2% speed error (57600 have 0.8% error)
-  #define GPS_BAUD   57600
+  #define GPS_BAUD   115200
 
   /* GPS protocol 
   NMEA  - Standard NMEA protocol GGA, GSA and RMC  sentences are needed
@@ -677,7 +713,7 @@
 
 
   //#define NMEA
-  #define UBLOX
+  //#define UBLOX
   //#define MTK_BINARY16
   //#define MTK_BINARY19
   //#define INIT_MTK_GPS        // initialize MTK GPS for using selected speed, 5Hz update rate and GGA & RMC sentence or binary settings
@@ -717,7 +753,7 @@
   Convert the degree+minutes into decimal degree by ==> degree+minutes*(1/60)
   Note the sign on declination it could be negative or positive (WEST or EAST) 
   Also note, that maqgnetic declination changes with time, so recheck your value every 3-6 months */
-  #define MAG_DECLINATION  4.02f   //(**)
+  #define MAG_DECLINATION  0.0f   //(**)
 
   // Adds a forward predictive filterig to compensate gps lag. Code based on Jason Short's lead filter implementation
   #define GPS_LEAD_FILTER               //(**)       
@@ -766,6 +802,8 @@
   #define LAND_SPEED          100
 
 
+
+
   /**************************************************************************************/
   /***********************        LCD/OLED - display settings       *********************/
   /**************************************************************************************/
@@ -785,7 +823,7 @@
   //#define OLED_DIGOLE     // I2C OLED from http://www.digole.com/index.php?productID=550
 
   /******************************   Display settings   ***********************************/
-  #define LCD_SERIAL_PORT 0    // must be 0 on Pro Mini and single serial boards; Set to your choice on any Mega based board
+  //#define LCD_SERIAL_PORT 0    // must be 0 on Pro Mini and single serial boards; Set to your choice on any Mega based board
 
   //#define SUPPRESS_OLED_I2C_128x64LOGO  // suppress display of OLED logo to save memory
 
@@ -865,8 +903,8 @@
   /********************************************************************/
   /****                             Buzzer                         ****/
   /********************************************************************/
-  #define BUZZER
-  #define RCOPTIONSBEEP         // uncomment this if you want the buzzer to beep at any rcOptions change on channel Aux1 to Aux4
+  //#define BUZZER
+  //#define RCOPTIONSBEEP         // uncomment this if you want the buzzer to beep at any rcOptions change on channel Aux1 to Aux4
   //#define ARMEDTIMEWARNING 330  // (*) Trigger an alarm after a certain time of being armed [s] to save you lipo (if your TX does not have a countdown)
   //#define PILOTLAMP             //Uncomment if you are using a X-Arcraft Pilot Lamp
 
@@ -878,7 +916,7 @@
   with R1=33k and R2=51k
   vbat = [0;1023]*16/VBATSCALE
   must be associated with #define BUZZER ! */
-  #define VBAT              // uncomment this line to activate the vbat code
+  //#define VBAT              // uncomment this line to activate the vbat code
   #define VBATSCALE       132 // (*) (**) change this value if readed Battery voltage is different than real voltage
   #define VBATNOMINAL     126 // 12,6V full battery nominal voltage - only used for lcd.telemetry
   #define VBATLEVEL_WARN1  107// (*) (**) 10,7V
@@ -909,12 +947,6 @@
   /****           altitude hold                                    ****/
   /********************************************************************/
 
-  /* defines the neutral zone of throttle stick during altitude hold, default setting is
-  +/-50 uncommend and change the value below if you want to change it. */
-  #define ALT_HOLD_THROTTLE_NEUTRAL_ZONE    100
-  //#define ALT_HOLD_THROTTLE_MIDPOINT        1500  // in us    - if uncommented, this value is used in ALT_HOLD for throttle stick middle point instead of initialThrottleHold parameter.
-
-
   /* uncomment to disable the altitude hold feature.
   * This is useful if all of the following apply
   * + you have a baro
@@ -922,6 +954,34 @@
   * + do not use altitude hold feature
   * + want to save memory space */
   //#define SUPPRESS_BARO_ALTHOLD
+  
+  /* defines the neutral zone of throttle stick during altitude hold, default setting is
+  +/-50 uncommend and change the value below if you want to change it. */
+  #define ALT_HOLD_THROTTLE_NEUTRAL_ZONE    50
+  //#define ALT_HOLD_THROTTLE_MIDPOINT        1500  // in us    - if uncommented, this value is used in ALT_HOLD for throttle stick middle point instead of initialThrottleHold parameter.
+  
+
+  /********************************************************************/
+  /****           autoland function                                ****/
+  /********************************************************************/
+
+    /* This feature enables AUTOLAND BOXITEM.
+     * Use together with RTH_ALT_MODE!
+     * Works with valid GPS data only!
+     * when AUTOLAND is active, RTH mode will be activated, so copter first move to home WP, then starts to descend
+     * over SAFETY_ALT vario is the defined FAST_VARIO, under the SLOW_VARIO. This is for slowing down copter before land
+     * the trigger for disarm is the BaroPID value. When copter can't descend anymore (touched the ground), 
+       the RPM will slow down until it reaches low BaroPID enough for DISARM.
+     * Please note that for security reasons, SAFETY DEADBAND is applied, it throttle stick is out of deadband the automatic altitude control will be disabled
+     */
+
+    //#define AUTOLAND
+
+    #define AUTOLAND_FAST_VARIO       100  // vario over safety alt (cm/s)
+    #define AUTOLAND_SLOW_VARIO       25   // vario under safety alt (cm/s)
+    #define AUTOLAND_SAFETY_ALT       400  // safety altitude (cm)
+    #define AUTOLAND_SAFETY_DEADBAND  100  // deadband for AUTOLAND mode. See in description.
+    
 
   /********************************************************************/
   /****           altitude variometer                              ****/
@@ -953,14 +1013,14 @@
   * It must be 16 characters total,
   * The last 4 characters will be overwritten with the version number.
   */
-  #define BOARD_NAME "MultiWii   V-.--"
+  #define BOARD_NAME "MultiWii   V2.31r"
   //                  123456789.123456
 
   /*************      Support multiple configuration profiles in EEPROM     ************/
   //#define MULTIPLE_CONFIGURATION_PROFILES
 
   /*************      do no reset constants when change of flashed program is detected ***********/
-  #define NO_FLASH_CHECK
+  //#define NO_FLASH_CHECK
 
   /*************************************************************************************************/
   /*****************                                                                 ***************/
@@ -1007,7 +1067,7 @@
   /* up to 300Hz refreshrate it is as fast as possible (100-300Hz depending on the cound of used servos and the servos state).
   for use with digital servos
   dont use it with analog servos! thay may get damage. (some will work but be careful) */
-  #define SERVO_RFR_300HZ
+  //#define SERVO_RFR_300HZ
 
   /***********************             HW PWM Servos             ***********************/ 
   /* HW PWM Servo outputs for Arduino Mega.. moves:
@@ -1020,7 +1080,7 @@
   SERVO7  = pin 7   (elevator for fixed wing)
   SERVO8  = pin 8   (motor for fixed wing)       */ 
 
-  #define MEGA_HW_PWM_SERVOS
+  //#define MEGA_HW_PWM_SERVOS
 
   /* HW PWM Servo outputs for 32u4 NanoWii, MicroWii etc. - works with either the variable SERVO_RFR_RATE or
   * one of the 3 fixed servo.refresh.rates *
@@ -1033,7 +1093,7 @@
   */
   //#define A32U4_4_HW_PWM_SERVOS
 
-  #define SERVO_RFR_RATE  300    // In Hz, you can set it from 20 to 400Hz, used only in HW PWM mode for mega and 32u4
+  //#define SERVO_RFR_RATE  300    // In Hz, you can set it from 20 to 400Hz, used only in HW PWM mode for mega and 32u4
   //#define SERVO_PIN5_RFR_RATE  200    // separate yaw pwm rate.
   // In Hz, you can set it from 20 to 400Hz, used only in HW PWM mode for 32u4
 
@@ -1116,8 +1176,8 @@
   Warning: this creates a special version of MultiWii Code
   You cannot fly with this special version. It is only to be used for calibrating ESCs
   Read How To at http://code.google.com/p/multiwii/wiki/ESCsCalibration */
-  #define ESC_CALIB_LOW  MINCOMMAND
-  #define ESC_CALIB_HIGH 2000
+  //#define ESC_CALIB_LOW  MINCOMMAND
+  //#define ESC_CALIB_HIGH 2000
   //#define ESC_CALIB_CANNOT_FLY  // uncomment to activate
 
   /****           internal frequencies                             ****/
