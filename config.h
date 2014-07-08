@@ -581,7 +581,7 @@
   first implementation by HAdrian, mods by EOSBandi
   */
 
-  #define ADVANCED_HEADFREE									//Advanced headfree mode is enabled when this is uncommented
+  //#define ADVANCED_HEADFREE									//Advanced headfree mode is enabled when this is uncommented
   #define ADV_HEADFREE_RANGE 15								//Range where advanced headfree mode activated
 
 
@@ -608,9 +608,10 @@
   for best results. This value is depended from your configuration, AUW and some other params.  Next, after FAILSAFE_OFF_DELAY the copter is disarmed, 
   and motors is stopped. If RC pulse coming back before reached FAILSAFE_OFF_DELAY time, after the small quard time the RC control is returned to normal. */
   //#define FAILSAFE                                // uncomment  to activate the failsafe function
-  #define FAILSAFE_DELAY     5                      // Guard time for failsafe activation after signal lost. 1 step = 0.1sec - 1sec in example
-  #define FAILSAFE_OFF_DELAY 1000                   // Time for Landing before motors stop in 0.1sec. 1 step = 0.1sec - 20sec in example
-  #define FAILSAFE_THROTTLE  (MINTHROTTLE + 200)    // (*) Throttle level used for landing - may be relative to MINTHROTTLE - as in this case
+  #define FAILSAFE_DELAY     5                    // Guard time for failsafe activation after signal lost. 1 step = 0.1sec - 1sec in example
+  #define FAILSAFE_OFF_DELAY 1000                 // Time for Landing before motors stop in 0.1sec. 1 step = 0.1sec - 20sec in example
+  #define FAILSAFE_THROTTLE  (MINTHROTTLE + 200)  // (*) Throttle level used for landing - may be relative to MINTHROTTLE - as in this case
+  #define FAILSAFE_DETECT_TRESHOLD  985           //Failsafe threshold (in us)
 
   /*****************                Failsafe descending to the ground by BARO          *********************************/
   /* For vario-controlled descending instead of having a fix throttle value, uncomment FAILSAFE_ALT_MODE. This allows to descend with preset vario. 
@@ -623,17 +624,9 @@
      Please note that FAILSAE_OFF_DELAY is still active for security reasons, so set up long time enough to be able to RTH before this timer ends because motors will stop!!!*/
   
   //#define FAILSAFE_ALT_MODE             // uncomment for descending with constant vario if in Failsafe - use with FAILSAFE and define the FAILSAFE_SLOW_VARIO
-  #define FAILSAFE_SLOW_VARIO   50      // in cm/s - slow desceding speed under SAFETY_ALT, this is default is SAFETY_ALT is not used.  - maximum 250!!!
-  #define FAILSAFE_FAST_VARIO   100     // in cm/s - fast desceding speed over SAFETY_ALT, maximum 250!!!
-  #define FAILSAFE_SAFETY_ALT   100     // in cm   - safety altitude, where to slow down descending before landing, in cm!!!
 
   //#define FAILSAFE_RTH_MODE             // if GPS present and ready, copter starts RTH when signal lost. When signal is back, control is back again. 
-  #define FAILSAFE_RTH_VARIO    100     // in cm/s - vario for RTH function for failsafe, maximum 250!!!
-  #define FAILSAFE_RTH_ALT      1000    // in cm   - minimum RTH altitude for failsafe. If copter is higher than this, it will keep altitude.
-  #define FAILSAFE_RTH_HOME     400     // in cm   - home altitude for RTH, copter will descend to this altitude and wait.
-  #define FAILSAFE_RTH_DELAY    15      // in s    - safety delay, after reaching HOME altitude, it'll land in FAILSAFE_ALT_MODE when safety delay terminates.
-  #define FAILSAFE_DETECT_TRESHOLD  985 //Failsafe threshold (in us)
-
+  
   //#define FAILSAFE_AUTOLAND_MODE
 
 
@@ -958,7 +951,7 @@
   /* defines the neutral zone of throttle stick during altitude hold, default setting is
   +/-50 uncommend and change the value below if you want to change it. */
   #define ALT_HOLD_THROTTLE_NEUTRAL_ZONE    50
-  //#define ALT_HOLD_THROTTLE_MIDPOINT        1500  // in us    - if uncommented, this value is used in ALT_HOLD for throttle stick middle point instead of initialThrottleHold parameter.
+  #define ALT_HOLD_THROTTLE_MIDPOINT        1500  // in us    - if uncommented, this value is used in ALT_HOLD for throttle stick middle point instead of initialThrottleHold parameter.
      
 
   /********************************************************************/

@@ -1300,7 +1300,7 @@ void loop () {
         
         #if defined(FAILSAFE_AUTOLAND_MODE)
           uint8_t autoland_mode_check = (NAV_state == NAV_STATE_NONE) || 
-            ((NAV_state == NAV_STATE_HOLD_INFINIT) && (failsafeCnt > 5*(FAILSAFE_DELAY+FAILSAFE_OFF_DELAY) );
+            ((NAV_state == NAV_STATE_HOLD_INFINIT) && (failsafeCnt > 5*(FAILSAFE_DELAY+FAILSAFE_OFF_DELAY)) );
           if (autoland_mode_check)
           {
             f.GPS_mode = GPS_MODE_HOLD;
