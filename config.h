@@ -634,7 +634,7 @@
   #define FAILSAFE_RTH_DELAY    15      // in s    - safety delay, after reaching HOME altitude, it'll land in FAILSAFE_ALT_MODE when safety delay terminates.
   #define FAILSAFE_DETECT_TRESHOLD  985 //Failsafe threshold (in us)
 
-
+  //#define FAILSAFE_AUTOLAND_MODE
 
 
   /*****************                DFRobot LED RING    *********************************/
@@ -699,7 +699,7 @@
   in NMEA mode the GPS must be configured to output GGA and RMC NMEA sentences (which is generally the default conf for most GPS devices)
   at least 5Hz update rate. uncomment the first line to select the GPS serial port of the arduino */
 
-  //#define GPS_SERIAL 2         // should be 2 for flyduino v2. It's the serial port number on arduino MEGA
+  #define GPS_SERIAL 2         // should be 2 for flyduino v2. It's the serial port number on arduino MEGA
   //#define GPS_PROMINI_SERIAL   // Will Autosense if GPS is connected when ardu boots.
 
   // avoid using 115200 baud because with 16MHz arduino the 115200 baudrate have more than 2% speed error (57600 have 0.8% error)
@@ -959,29 +959,7 @@
   +/-50 uncommend and change the value below if you want to change it. */
   #define ALT_HOLD_THROTTLE_NEUTRAL_ZONE    50
   //#define ALT_HOLD_THROTTLE_MIDPOINT        1500  // in us    - if uncommented, this value is used in ALT_HOLD for throttle stick middle point instead of initialThrottleHold parameter.
-  
-
-  /********************************************************************/
-  /****           autoland function                                ****/
-  /********************************************************************/
-
-    /* This feature enables AUTOLAND BOXITEM.
-     * Use together with RTH_ALT_MODE!
-     * Works with valid GPS data only!
-     * when AUTOLAND is active, RTH mode will be activated, so copter first move to home WP, then starts to descend
-     * over SAFETY_ALT vario is the defined FAST_VARIO, under the SLOW_VARIO. This is for slowing down copter before land
-     * the trigger for disarm is the BaroPID value. When copter can't descend anymore (touched the ground), 
-       the RPM will slow down until it reaches low BaroPID enough for DISARM.
-     * Please note that for security reasons, SAFETY DEADBAND is applied, it throttle stick is out of deadband the automatic altitude control will be disabled
-     */
-
-    //#define AUTOLAND
-
-    #define AUTOLAND_FAST_VARIO       100  // vario over safety alt (cm/s)
-    #define AUTOLAND_SLOW_VARIO       25   // vario under safety alt (cm/s)
-    #define AUTOLAND_SAFETY_ALT       400  // safety altitude (cm)
-    #define AUTOLAND_SAFETY_DEADBAND  100  // deadband for AUTOLAND mode. See in description.
-    
+     
 
   /********************************************************************/
   /****           altitude variometer                              ****/

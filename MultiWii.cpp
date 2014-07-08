@@ -859,49 +859,43 @@ void loop () {
     computeRC();
     // Failsafe routine - added by MIS
   #if defined(FAILSAFE)
-    if (failsafeCnt > (5*FAILSAFE_DELAY)) {failsafe.active = 1;} else {failsafe.active = 0;}
-    if ( failsafe.active && f.ARMED) {                  // Stabilize, and set Throttle to specified level
+    uint8_t failsafe_modes_check = (failsafeCnt > (5*FAILSAFE_DELAY)) && (NAV_state == NAV_STATE_NONE);
+    if (failsafe_modes_check) {
+      NAV_error = NAV_ERROR_NONE;
+      NAV_state = NAV_STATE_NONE;    
+      failsafe.active = 1;
+    } else {
+      failsafe.active = 0;
+    }
+    if (failsafe.active && f.ARMED) {                  // Stabilize, and set Throttle to specified level
       for(i=0; i<3; i++) rcData[i] = MIDRC;                               // after specified guard time after RC signal is lost (in 0.1sec)
             
       #if (defined(FAILSAFE_ALT_MODE) || defined(FAILSAFE_RTH_MODE)) && BARO
           rcData[THROTTLE] = rcCommand[THROTTLE];
       #else
           rcData[THROTTLE] = conf.failsafe_throttle;
-      #endif      
-      
+      #endif                   
+             
+      #if !defined(FAILSAFE_ALT_MODE) && !defined(FAILSAFE_RTH_MODE)
       if ((failsafeCnt > 5*(FAILSAFE_DELAY+FAILSAFE_OFF_DELAY)) 
-        #if (defined(FAILSAFE_ALT_MODE) || defined(FAILSAFE_RTH_MODE)) && BARO
+        #if BARO
           || (BaroPID < -300)                           // Turn off motors after landing or when hit something in RTH mode
         #endif
       ) {          // Turn OFF motors after specified Time (in 0.1sec)
           go_disarm();     // This will prevent the copter to automatically rearm if failsafe shuts it down and prevents
           f.OK_TO_ARM = 0; // to restart accidentely by just reconnect to the tx - you will have to switch off first to rearm
       }
-        
+      #endif
+             
       failsafe.events++;
     }
-    #if (defined(FAILSAFE_RTH_MODE) || defined(FAILSAFE_ALT_MODE)) && BARO
-    else if (failsafe.altSet
-      #if defined(FAILSAFE_RTH_MODE)
-        || failsafe.confSet
-      #endif   
-    ) {
-      failsafe.altSet = 0;
-      #if defined(FAILSAFE_RTH_MODE)        
-         failsafe.confSet = 0;
-         failsafe.atHomeDelay = 0;
-         failsafe.atHome      = 0;
-      #endif
-      resetAltHold();
-    }
-  #endif
     
-    if ( failsafe.active && !f.ARMED) {  //Turn of "Ok To arm to prevent the motors from spinning after repowering the RX with low throttle and aux to arm
-      go_disarm();     // This will prevent the copter to automatically rearm if failsafe shuts it down and prevents
-      f.OK_TO_ARM = 0; // to restart accidentely by just reconnect to the tx - you will have to switch off first to rearm
-    }
+    if (failsafe.active && !f.ARMED) {  //Turn of "Ok To arm to prevent the motors from spinning after repowering the RX with low throttle and aux to arm
+        go_disarm();     // This will prevent the copter to automatically rearm if failsafe shuts it down and prevents
+        f.OK_TO_ARM = 0; // to restart accidentely by just reconnect to the tx - you will have to switch off first to rearm
+    }    
     failsafeCnt++;
-#endif
+  #endif
     // end of failsafe routine - next change is made with RcOptions setting
 
     // ------------------ STICKS COMMAND HANDLER --------------------
@@ -1072,29 +1066,26 @@ void loop () {
       if (!f.ANGLE_MODE) {
         errorAngleI[ROLL] = 0; errorAngleI[PITCH] = 0;
         f.ANGLE_MODE = 1;
-        }  
-      } else {
+      }  
+    } else {
         // failsafe support
         f.ANGLE_MODE = 0;
-      }
+    }
     if ( rcOptions[BOXHORIZON] && !failsafe.active) {
       f.ANGLE_MODE = 0;
       if (!f.HORIZON_MODE) {
         errorAngleI[ROLL] = 0; errorAngleI[PITCH] = 0;
         f.HORIZON_MODE = 1;
         }
-      } else {
+    } else {
         f.HORIZON_MODE = 0;
-      }
+    }
 #endif
 
     if (rcOptions[BOXARM] == 0) f.OK_TO_ARM = 1;
 #if !defined(GPS_LED_INDICATOR)
     if (f.ANGLE_MODE || f.HORIZON_MODE) {STABLEPIN_ON;} else {STABLEPIN_OFF;}
 #endif
-
-
-
 
 #if BARO
 #if defined(GPS_SERIAL)
@@ -1120,7 +1111,7 @@ void loop () {
     }
 #endif
 #ifdef VARIOMETER
-    if (rcOptions[BOXVARIO]) {
+    if (rcOptions[BOXVARIO] || failsafe.active) {
       if (!f.VARIO_MODE) {
         f.VARIO_MODE = 1;
         }
@@ -1129,10 +1120,10 @@ void loop () {
       }
 #endif
 #endif
-  if (rcOptions[BOXMAG] || failsafe.active) {
-    if (!f.MAG_MODE) {
-      f.MAG_MODE = 1;
-      magHold = att.heading;
+    if (rcOptions[BOXMAG] || failsafe.active) {
+      if (!f.MAG_MODE) {
+        f.MAG_MODE = 1;
+        magHold = att.heading;
       }
     } else {
       f.MAG_MODE = 0;
@@ -1142,7 +1133,7 @@ void loop () {
       if (!f.HEADFREE_MODE) {
         f.HEADFREE_MODE = 1;
       }
-#if defined(ADVANCED_HEADFREE)
+#if defined(ADVANCED_HEADFREE) && GPS
       if ((f.GPS_FIX && GPS_numSat >= 5) && (GPS_distanceToHome > ADV_HEADFREE_RANGE) ) {
         if (GPS_directionToHome < 180)  {headFreeModeHold = GPS_directionToHome + 180;} else {headFreeModeHold = GPS_directionToHome - 180;}
       }
@@ -1162,130 +1153,175 @@ void loop () {
     //Generate a packed byte of all three GPS boxes.
     uint8_t gps_modes_check = (rcOptions[BOXLAND]<< 3) + (rcOptions[BOXGPSHOME]<< 2) + (rcOptions[BOXGPSHOLD]<<1) + (rcOptions[BOXGPSNAV]);
 
-    if (f.ARMED ) {                       //Check GPS status and armed
-      //TODO: implement f.GPS_Trusted flag, idea from Dramida - Check for degraded HDOP and sudden speed jumps
-      if (f.GPS_FIX) {
-        if (GPS_numSat > 5 ) {
-          if (prv_gps_modes != gps_modes_check) {                           //Check for change since last loop
-            NAV_error = NAV_ERROR_NONE;
-            if (rcOptions[BOXGPSHOME])									// RTH has the priotity over everything else
-            {
-              init_RTH();
-            }
-            else if (rcOptions[BOXGPSHOLD])								//Position hold has priority over mission execution
-            {                                                         //But has less priority than RTH
-#if defined(I2C_GPS)
-              f.GPS_mode = GPS_MODE_HOLD;
-              GPS_I2C_command(I2C_GPS_COMMAND_POSHOLD,0);
-#else
-              if (f.GPS_mode == GPS_MODE_NAV)
-              { NAV_paused_at = mission_step.number; }
-              f.GPS_mode = GPS_MODE_HOLD;
-              GPS_set_next_wp(&GPS_coord[LAT], &GPS_coord[LON], &GPS_coord[LAT], & GPS_coord[LON]);		//hold at the current position
-              set_new_altitude(alt.EstAlt);							//and current altitude
-              NAV_state = NAV_STATE_HOLD_INFINIT;
-#endif
-            }
-#if !defined(I2C_GPS)
-            else if (rcOptions[BOXLAND])									//Land now
-            {
-              f.GPS_mode = GPS_MODE_HOLD;
-              f.GPS_BARO_MODE = true;
-              GPS_set_next_wp(&GPS_coord[LAT], &GPS_coord[LON],&GPS_coord[LAT], & GPS_coord[LON]);	
-              set_new_altitude(alt.EstAlt);
-              NAV_state = NAV_STATE_LAND_START;
-            }
-#endif
-            else if (rcOptions[BOXGPSNAV])								//Start navigation
-            {
-#if defined(I2C_GPS)
-              GPS_I2C_command(I2C_GPS_COMMAND_POSHOLD,0);				//Poshold with I2CGPS
-#else
-              f.GPS_mode = GPS_MODE_NAV;								//Nav mode start
-              f.GPS_BARO_MODE = true;
-              GPS_prev[LAT] = GPS_coord[LAT];
-              GPS_prev[LON] = GPS_coord[LON];
-              if (NAV_paused_at != 0) 
+    if (!failsafe.active) {
+      if (f.ARMED) {                       //Check GPS status and armed
+        //TODO: implement f.GPS_Trusted flag, idea from Dramida - Check for degraded HDOP and sudden speed jumps
+        if (f.GPS_FIX) {
+          if (GPS_numSat > 5 ) {
+            if (prv_gps_modes != gps_modes_check) {                           //Check for change since last loop
+              NAV_error = NAV_ERROR_NONE;
+              if (rcOptions[BOXGPSHOME])									// RTH has the priotity over everything else
               {
-                next_step = NAV_paused_at;
-                NAV_paused_at = 0;									//Clear paused step 
-              } 
-              else 
-              {
-                next_step = 1;
-                jump_times = -10;									//Reset jump counter
+                init_RTH();
               }
-              NAV_state = NAV_STATE_PROCESS_NEXT;
+              else if (rcOptions[BOXGPSHOLD])								//Position hold has priority over mission execution
+              {                                                         //But has less priority than RTH
+#if defined(I2C_GPS)
+                f.GPS_mode = GPS_MODE_HOLD;
+                GPS_I2C_command(I2C_GPS_COMMAND_POSHOLD,0);
+#else
+                if (f.GPS_mode == GPS_MODE_NAV) NAV_paused_at = mission_step.number;
+                f.GPS_mode = GPS_MODE_HOLD;
+                GPS_set_next_wp(&GPS_coord[LAT], &GPS_coord[LON], &GPS_coord[LAT], & GPS_coord[LON]);		//hold at the current position
+                set_new_altitude(alt.EstAlt);							//and current altitude
+                NAV_state = NAV_STATE_HOLD_INFINIT;
 #endif
+              }
+#if !defined(I2C_GPS)
+              else if (rcOptions[BOXLAND])									//Land now
+              {
+                f.GPS_mode = GPS_MODE_HOLD;
+                f.GPS_BARO_MODE = true;
+                GPS_set_next_wp(&GPS_coord[LAT], &GPS_coord[LON],&GPS_coord[LAT], & GPS_coord[LON]);	
+                set_new_altitude(alt.EstAlt);
+                NAV_state = NAV_STATE_LAND_START;
+              }
+#endif
+              else if (rcOptions[BOXGPSNAV])								//Start navigation
+              {
+#if defined(I2C_GPS)
+                GPS_I2C_command(I2C_GPS_COMMAND_POSHOLD,0);				//Poshold with I2CGPS
+#else
+                f.GPS_mode = GPS_MODE_NAV;								//Nav mode start
+                f.GPS_BARO_MODE = true;
+                GPS_prev[LAT] = GPS_coord[LAT];
+                GPS_prev[LON] = GPS_coord[LON];
+                if (NAV_paused_at != 0) 
+                {
+                  next_step = NAV_paused_at;
+                  NAV_paused_at = 0;									//Clear paused step 
+                } 
+                else 
+                {
+                  next_step = 1;
+                  jump_times = -10;									//Reset jump counter
+                }
+                NAV_state = NAV_STATE_PROCESS_NEXT;
+#endif
+              }
+              else                                                          //None of the GPS Boxes are switched on
+              {
+                f.GPS_mode = GPS_MODE_NONE;
+                f.GPS_BARO_MODE = false;
+                f.THROTTLE_IGNORED = false;
+                f.LAND_IN_PROGRESS = 0;
+                f.THROTTLE_IGNORED = 0;
+#if !defined(I2C_GPS)
+                NAV_state = NAV_STATE_NONE;
+#endif
+                GPS_reset_nav();
+              }
+              prv_gps_modes = gps_modes_check;
             }
-            else                                                          //None of the GPS Boxes are switched on
+          } //numSat>5 
+          else 
+          { //numSat dropped below 5 during navigation
+            if (f.GPS_mode == GPS_MODE_NAV) 
+            {
+              NAV_paused_at = mission_step.number;
+              f.GPS_mode = GPS_MODE_NONE;
+              set_new_altitude(alt.EstAlt);							//and current altitude
+              NAV_state = NAV_STATE_NONE;
+              NAV_error = NAV_ERROR_SPOILED_GPS;
+              prv_gps_modes = 0xff;									//invalidates mode check, to allow re evaluate rcOptions when numsats raised again
+
+            }
+            if (f.GPS_mode == GPS_MODE_HOLD || f.GPS_mode == GPS_MODE_RTH)
             {
               f.GPS_mode = GPS_MODE_NONE;
-              f.GPS_BARO_MODE = false;
-              f.THROTTLE_IGNORED = false;
-              f.LAND_IN_PROGRESS = 0;
-              f.THROTTLE_IGNORED = 0;
-#if !defined(I2C_GPS)
               NAV_state = NAV_STATE_NONE;
-#endif
-              GPS_reset_nav();
+              NAV_error = NAV_ERROR_SPOILED_GPS;
+              prv_gps_modes = 0xff;									//invalidates mode check, to allow re evaluate rcOptions when numsats raised again
             }
-            prv_gps_modes = gps_modes_check;
+            nav[0] = 0; nav[1] = 0;
           }
-        } //numSat>5 
-        else 
-        { //numSat dropped below 5 during navigation
-          if (f.GPS_mode == GPS_MODE_NAV) 
-          {
-            NAV_paused_at = mission_step.number;
-            f.GPS_mode = GPS_MODE_NONE;
-            set_new_altitude(alt.EstAlt);							//and current altitude
-            NAV_state = NAV_STATE_NONE;
-            NAV_error = NAV_ERROR_SPOILED_GPS;
-            prv_gps_modes = 0xff;									//invalidates mode check, to allow re evaluate rcOptions when numsats raised again
-
-          }
-          if (f.GPS_mode == GPS_MODE_HOLD || f.GPS_mode == GPS_MODE_RTH)
-          {
-            f.GPS_mode = GPS_MODE_NONE;
-            NAV_state = NAV_STATE_NONE;
-            NAV_error = NAV_ERROR_SPOILED_GPS;
-            prv_gps_modes = 0xff;									//invalidates mode check, to allow re evaluate rcOptions when numsats raised again
-          }
-          nav[0] = 0; nav[1] = 0;
+        } //f.GPS_FIX
+        else  // GPS Fix dissapeared, very unlikely that we will be able to regain it, abort mission
+        {
+          f.GPS_mode = GPS_MODE_NONE;				
+#if !defined(I2C_GPS)
+          NAV_state = NAV_STATE_NONE;
+          NAV_paused_at = 0;
+          NAV_error = NAV_ERROR_GPS_FIX_LOST;
+#endif
+          GPS_reset_nav();
+          prv_gps_modes = 0xff;				//Gives a chance to restart mission when regain fix
         }
-      } //f.GPS_FIX
-      else  // GPS Fix dissapeared, very unlikely that we will be able to regain it, abort mission
-      {
+      }  //copter is armed
+      else   //copter is disarmed
+      {																	
         f.GPS_mode = GPS_MODE_NONE;				
+        f.GPS_BARO_MODE = false;
+        f.THROTTLE_IGNORED = false;
 #if !defined(I2C_GPS)
         NAV_state = NAV_STATE_NONE;
         NAV_paused_at = 0;
-        NAV_error = NAV_ERROR_GPS_FIX_LOST;
+        NAV_error = NAV_ERROR_DISARMED;
 #endif
         GPS_reset_nav();
-        prv_gps_modes = 0xff;				//Gives a chance to restart mission when regain fix
       }
-    }  //copter is armed
-    else   //copter is disarmed
-    {																	
-      f.GPS_mode = GPS_MODE_NONE;				
-      f.GPS_BARO_MODE = false;
-      f.THROTTLE_IGNORED = false;
-#if !defined(I2C_GPS)
-      NAV_state = NAV_STATE_NONE;
-      NAV_paused_at = 0;
-      NAV_error = NAV_ERROR_DISARMED;
-#endif
-      GPS_reset_nav();
-    }
-
+    } // endof failsafe.active check
 #endif
 
-#if defined(FIXEDWING) || defined(HELICOPTER)
+  #if defined(FAILSAFE)
+    if (failsafe.active) {
+      if (f.ARMED) {
+        if (f.GPS_FIX && GPS_numSat >= 5) {                              //check if GPS is ready for RTH
+        #if defined(FAILSAFE_RTH_MODE)
+          if (NAV_state == NAV_STATE_NONE) {
+            init_RTH();
+          }
+        #endif
+        
+        #if defined(FAILSAFE_ALT_MODE)
+          if (NAV_state == NAV_STATE_NONE) {
+          #if defined(I2C_GPS)
+            f.GPS_mode = GPS_MODE_HOLD;
+            GPS_I2C_command(I2C_GPS_COMMAND_POSHOLD,0);
+          #else
+            if (f.GPS_mode == GPS_MODE_NAV) NAV_paused_at = mission_step.number;
+            f.GPS_mode = GPS_MODE_HOLD;
+            GPS_set_next_wp(&GPS_coord[LAT], &GPS_coord[LON], &GPS_coord[LAT], & GPS_coord[LON]);		//hold at the current position
+            set_new_altitude(alt.EstAlt);							//and current altitude
+            NAV_state = NAV_STATE_HOLD_INFINIT;
+          #endif            
+          }
+        #endif
+        
+        #if defined(FAILSAFE_AUTOLAND_MODE)
+          uint8_t autoland_mode_check = (NAV_state == NAV_STATE_NONE) || 
+            ((NAV_state == NAV_STATE_HOLD_INFINIT) && (failsafeCnt > 5*(FAILSAFE_DELAY+FAILSAFE_OFF_DELAY) );
+          if (autoland_mode_check)
+          {
+            f.GPS_mode = GPS_MODE_HOLD;
+            f.GPS_BARO_MODE = true;
+            GPS_set_next_wp(&GPS_coord[LAT], &GPS_coord[LON],&GPS_coord[LAT], & GPS_coord[LON]);	
+            set_new_altitude(alt.EstAlt);
+            NAV_state = NAV_STATE_LAND_START;          
+          }
+        #endif
+        }
+        else { // no reliable GPSs, just pray and run
+        } // end of GPS signal and number check
+      } // end of Arm check
+    } // end of failsafe check
+  #endif
+
+
+  #if defined(FIXEDWING) || defined(HELICOPTER)
     if (rcOptions[BOXPASSTHRU]) {f.PASSTHRU_MODE = 1;}
     else {f.PASSTHRU_MODE = 0;}
-#endif
+  #endif
 
   } else { // not in rc loop
       static uint8_t taskOrder=0; // never call all functions in the same loop, to avoid high delay spikes
