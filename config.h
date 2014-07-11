@@ -36,7 +36,7 @@
   //#define BI
   //#define TRI
   //#define QUADP
-  #define QUADX
+  //#define QUADX
   //#define Y4
   //#define Y6
   //#define HEX6
@@ -60,7 +60,6 @@
   //#define MINTHROTTLE 1120 // for Super Simple ESCs 10A
   //#define MINTHROTTLE 1064 // special ESC (simonk)
   //#define MINTHROTTLE 1050 // for brushed ESCs like ladybird
-  #define MINTHROTTLE 1064 // (*) (**)
 
   /****************************    Motor maxthrottle    *******************************/
   /* this is the maximum value for the ESCs at full power, this value can be increased up to 2000 */
@@ -128,7 +127,7 @@
   //#define BOARD_PROTO_2   // with MPU6050 + slave  MAG3110 + MS baro
   //#define GY_80           // Chinese 10 DOF with  L3G4200D ADXL345 HMC5883L BMP085, LLC
   //#define GY_85           // Chinese 9 DOF with  ITG3205 ADXL345 HMC5883L LLC
-  #define GY_86           // Chinese 10 DOF with  MPU6050 HMC5883L MS5611, LLC
+  //#define GY_86           // Chinese 10 DOF with  MPU6050 HMC5883L MS5611, LLC
   //#define GY_521          // Chinese 6  DOF with  MPU6050, LLC
   //#define INNOVWORKS_10DOF // with ITG3200, BMA180, HMC5883, BMP085 available here http://www.diymulticopter.com
   //#define INNOVWORKS_6DOF // with ITG3200, BMA180 available here http://www.diymulticopter.com
@@ -536,7 +535,7 @@
   //#define MPU6050_LPF_256HZ     // This is the default setting, no need to uncomment, just for reference
   //#define MPU6050_LPF_188HZ
   //#define MPU6050_LPF_98HZ
-  #define MPU6050_LPF_42HZ
+  //#define MPU6050_LPF_42HZ
   //#define MPU6050_LPF_20HZ
   //#define MPU6050_LPF_10HZ
   //#define MPU6050_LPF_5HZ       // Use this only in extreme cases, rather change motors and/or props
@@ -571,7 +570,7 @@
   #define THROTTLE_ANGLE_CORRECTION 40
 
   /*** HEADFREE : the copter can be controled by an absolute stick orientation, whatever the yaw orientation ***/
-  #define HEADFREE
+  //#define HEADFREE
   
   /*************************        Advanced Headfree Mode             ********************/
   /* In Advanced Headfree mode when the copter is farther than ADV_HEADFREE_RANGE meters then 
@@ -696,7 +695,7 @@
   //#define GPS_PROMINI_SERIAL   // Will Autosense if GPS is connected when ardu boots.
 
   // avoid using 115200 baud because with 16MHz arduino the 115200 baudrate have more than 2% speed error (57600 have 0.8% error)
-  #define GPS_BAUD   115200
+  #define GPS_BAUD   57600
 
   /* GPS protocol 
   NMEA  - Standard NMEA protocol GGA, GSA and RMC  sentences are needed
@@ -728,7 +727,7 @@
   #define GPS_LED_INDICATOR
 
   //Enables the MSP_WP command set , which is used by WinGUI for displaying an setting up navigation
-  #define USE_MSP_WP                       
+  //#define USE_MSP_WP                       
 
   // HOME position is reset at every arm, uncomment it to prohibit it (you can set home position with GyroCalibration)    
   //#define DONT_RESET_HOME_AT_ARM             
@@ -1138,6 +1137,8 @@
   /* Enable string transmissions from copter to GUI */
   //#define DEBUGMSG
 
+  /* Use Write log to SDCard throught SD library with SPI port */
+  //#define LOG_SDCARD
 
   /********************************************************************/
   /****           ESCs calibration                                 ****/
