@@ -58,22 +58,21 @@
   This is the minimum value that allow motors to run at a idle speed  */
   //#define MINTHROTTLE 1300 // for Turnigy Plush ESCs 10A
   //#define MINTHROTTLE 1120 // for Super Simple ESCs 10A
-  //#define MINTHROTTLE 1064 // special ESC (simonk)
+  #define MINTHROTTLE 1064 // special ESC (simonk)
   //#define MINTHROTTLE 1050 // for brushed ESCs like ladybird
-  #define MINTHROTTLE 1064 // (*) (**)
 
   /****************************    Motor maxthrottle    *******************************/
   /* this is the maximum value for the ESCs at full power, this value can be increased up to 2000 */
-  #define MAXTHROTTLE 1850
+  #define MAXTHROTTLE 2000
 
   /****************************    Mincommand          *******************************/
   /* this is the value for the ESCs when they are not armed
   in some cases, this value must be lowered down to 900 for some specific ESCs, otherwise they failed to initiate */
-  #define MINCOMMAND  950
+  #define MINCOMMAND  1050
 
   /**********************************    I2C speed   ************************************/
-  //#define I2C_SPEED 100000L     //100kHz normal mode, this value must be used for a genuine WMP
-  #define I2C_SPEED 400000L   //400kHz fast mode, it works only with some WMP clones
+  #define I2C_SPEED 100000L     //100kHz normal mode, this value must be used for a genuine WMP
+  //#define I2C_SPEED 400000L   //400kHz fast mode, it works only with some WMP clones
 
   /***************************    Internal i2c Pullups   ********************************/
   /* enable internal I2C pull ups (in most cases it is better to use external pullups) */
@@ -88,7 +87,7 @@
   please submit any correction to this list.
   Note from Alex: I only own some boards, for other boards, I'm not sure, the info was gathered via rc forums, be cautious */
   //#define FFIMUv1         // first 9DOF+baro board from Jussi, with HMC5843                   <- confirmed by Alex
-  //#define FFIMUv2         // second version of 9DOF+baro board from Jussi, with HMC5883       <- confirmed by Alex
+  #define FFIMUv2         // second version of 9DOF+baro board from Jussi, with HMC5883       <- confirmed by Alex
   //#define FREEIMUv1       // v0.1 & v0.2 & v0.3 version of 9DOF board from Fabio
   //#define FREEIMUv03      // FreeIMU v0.3 and v0.3.1
   //#define FREEIMUv035     // FreeIMU v0.3.5 no baro
@@ -128,7 +127,7 @@
   //#define BOARD_PROTO_2   // with MPU6050 + slave  MAG3110 + MS baro
   //#define GY_80           // Chinese 10 DOF with  L3G4200D ADXL345 HMC5883L BMP085, LLC
   //#define GY_85           // Chinese 9 DOF with  ITG3205 ADXL345 HMC5883L LLC
-  #define GY_86           // Chinese 10 DOF with  MPU6050 HMC5883L MS5611, LLC
+  //#define GY_86           // Chinese 10 DOF with  MPU6050 HMC5883L MS5611, LLC
   //#define GY_521          // Chinese 6  DOF with  MPU6050, LLC
   //#define INNOVWORKS_10DOF // with ITG3200, BMA180, HMC5883, BMP085 available here http://www.diymulticopter.com
   //#define INNOVWORKS_6DOF // with ITG3200, BMA180 available here http://www.diymulticopter.com
@@ -368,10 +367,10 @@
   //#define SERIAL_SUM_PPM         PITCH,YAW,THROTTLE,ROLL,AUX1,AUX2,AUX3,AUX4,8,9,10,11 //For Graupner/Spektrum
   //#define SERIAL_SUM_PPM         ROLL,PITCH,THROTTLE,YAW,AUX1,AUX2,AUX3,AUX4,8,9,10,11 //For Robe/Hitec/Futaba
   //#define SERIAL_SUM_PPM         ROLL,PITCH,YAW,THROTTLE,AUX1,AUX2,AUX3,AUX4,8,9,10,11 //For Multiplex
-  #define SERIAL_SUM_PPM         PITCH,ROLL,THROTTLE,YAW,AUX1,AUX2,AUX3,AUX4,8,9,10,11 //For some Hitec/Sanwa/Others
+  //#define SERIAL_SUM_PPM         PITCH,ROLL,THROTTLE,YAW,AUX1,AUX2,AUX3,AUX4,8,9,10,11 //For some Hitec/Sanwa/Others
 
   // Uncommenting following line allow to connect PPM_SUM receiver to standard THROTTLE PIN on MEGA boards (eg. A8 in CRIUS AIO)
-  #define PPM_ON_THROTTLE
+  //#define PPM_ON_THROTTLE
 
   /**********************    Spektrum Satellite Reciver    *******************************/
   /* The following lines apply only for Spektrum Satellite Receiver
@@ -497,7 +496,7 @@
   /******                Serial com speed    *********************************/
   /* This is the speed of the serial interfaces */
   #define SERIAL0_COM_SPEED 115200
-  #define SERIAL1_COM_SPEED 115200
+  #define SERIAL1_COM_SPEED 38400
   #define SERIAL2_COM_SPEED 115200
   #define SERIAL3_COM_SPEED 115200
 
@@ -524,7 +523,7 @@
   //#define ITG3200_LPF_256HZ     // This is the default setting, no need to uncomment, just for reference
   //#define ITG3200_LPF_188HZ
   //#define ITG3200_LPF_98HZ
-  //#define ITG3200_LPF_42HZ
+  #define ITG3200_LPF_42HZ
   //#define ITG3200_LPF_20HZ
   //#define ITG3200_LPF_10HZ      // Use this only in extreme cases, rather change motors and/or props
 
@@ -536,7 +535,7 @@
   //#define MPU6050_LPF_256HZ     // This is the default setting, no need to uncomment, just for reference
   //#define MPU6050_LPF_188HZ
   //#define MPU6050_LPF_98HZ
-  #define MPU6050_LPF_42HZ
+  //#define MPU6050_LPF_42HZ
   //#define MPU6050_LPF_20HZ
   //#define MPU6050_LPF_10HZ
   //#define MPU6050_LPF_5HZ       // Use this only in extreme cases, rather change motors and/or props
@@ -592,7 +591,7 @@
   /************************        AP FlightMode        **********************************/
   /*** FUNCTIONALITY TEMPORARY REMOVED
   /* Temporarily Disables GPS_HOLD_MODE to be able to make it possible to adjust the Hold-position when moving the sticks.*/
-  //#define AP_MODE 40  // Create a deadspan for GPS.
+  #define AP_MODE 20  // Create a deadspan for GPS.
 
   /************************   Assisted AcroTrainer    ************************************/
   /* Train Acro with auto recovery. Value set the point where ANGLE_MODE takes over.
@@ -607,7 +606,7 @@
   PITCH, ROLL and YAW is centered and THROTTLE is set to FAILSAFE_THROTTLE value. You must set this value to descending about 1m/s or so
   for best results. This value is depended from your configuration, AUW and some other params.  Next, after FAILSAFE_OFF_DELAY the copter is disarmed, 
   and motors is stopped. If RC pulse coming back before reached FAILSAFE_OFF_DELAY time, after the small quard time the RC control is returned to normal. */
-  //#define FAILSAFE                                // uncomment  to activate the failsafe function
+  #define FAILSAFE                                // uncomment  to activate the failsafe function
   #define FAILSAFE_DELAY     5                    // Guard time for failsafe activation after signal lost. 1 step = 0.1sec - 1sec in example
   #define FAILSAFE_OFF_DELAY 1000                 // Time for Landing before motors stop in 0.1sec. 1 step = 0.1sec - 20sec in example
   #define FAILSAFE_THROTTLE  (MINTHROTTLE + 200)  // (*) Throttle level used for landing - may be relative to MINTHROTTLE - as in this case
@@ -623,11 +622,11 @@
 
      Please note that FAILSAE_OFF_DELAY is still active for security reasons, so set up long time enough to be able to RTH before this timer ends because motors will stop!!!*/
   
-  //#define FAILSAFE_ALT_MODE             // uncomment for descending with constant vario if in Failsafe - use with FAILSAFE and define the FAILSAFE_SLOW_VARIO
+  #define FAILSAFE_ALT_MODE             // uncomment for descending with constant vario if in Failsafe - use with FAILSAFE and define the FAILSAFE_SLOW_VARIO
 
-  //#define FAILSAFE_RTH_MODE             // if GPS present and ready, copter starts RTH when signal lost. When signal is back, control is back again. 
+  #define FAILSAFE_RTH_MODE             // if GPS present and ready, copter starts RTH when signal lost. When signal is back, control is back again. 
   
-  //#define FAILSAFE_AUTOLAND_MODE
+  #define FAILSAFE_AUTOLAND_MODE
 
 
   /*****************                DFRobot LED RING    *********************************/
@@ -706,7 +705,7 @@
 
 
   //#define NMEA
-  //#define UBLOX
+  #define UBLOX
   //#define MTK_BINARY16
   //#define MTK_BINARY19
   //#define INIT_MTK_GPS        // initialize MTK GPS for using selected speed, 5Hz update rate and GGA & RMC sentence or binary settings
@@ -753,7 +752,7 @@
 
   // add a 5 element moving average filter to GPS coordinates, helps eliminate gps noise but adds latency comment out to disable
   // use it with NMEA gps only 
-  //#define GPS_FILTERING                 //(**)     
+  #define GPS_FILTERING                 //(**)     
 
   // if we are within this distance to a waypoint then we consider it reached (distance is in cm)
   #define GPS_WP_RADIUS              100      //(**) 
@@ -984,7 +983,7 @@
   * It must be 16 characters total,
   * The last 4 characters will be overwritten with the version number.
   */
-  #define BOARD_NAME "MultiWii   V2.31r"
+  #define BOARD_NAME "MultiWii   V2.31"
   //                  123456789.123456
 
   /*************      Support multiple configuration profiles in EEPROM     ************/
@@ -1147,8 +1146,8 @@
   Warning: this creates a special version of MultiWii Code
   You cannot fly with this special version. It is only to be used for calibrating ESCs
   Read How To at http://code.google.com/p/multiwii/wiki/ESCsCalibration */
-  //#define ESC_CALIB_LOW  MINCOMMAND
-  //#define ESC_CALIB_HIGH 2000
+  #define ESC_CALIB_LOW  MINCOMMAND
+  #define ESC_CALIB_HIGH 2000
   //#define ESC_CALIB_CANNOT_FLY  // uncomment to activate
 
   /****           internal frequencies                             ****/
