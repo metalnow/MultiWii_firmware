@@ -68,7 +68,7 @@
   /****************************    Mincommand          *******************************/
   /* this is the value for the ESCs when they are not armed
   in some cases, this value must be lowered down to 900 for some specific ESCs, otherwise they failed to initiate */
-  #define MINCOMMAND  1050
+  #define MINCOMMAND  1000
 
   /**********************************    I2C speed   ************************************/
   #define I2C_SPEED 100000L     //100kHz normal mode, this value must be used for a genuine WMP
@@ -496,9 +496,9 @@
   /******                Serial com speed    *********************************/
   /* This is the speed of the serial interfaces */
   #define SERIAL0_COM_SPEED 115200
-  #define SERIAL1_COM_SPEED 38400
-  #define SERIAL2_COM_SPEED 115200
-  #define SERIAL3_COM_SPEED 115200
+  #define SERIAL1_COM_SPEED 38400    // bluetooth
+  #define SERIAL2_COM_SPEED 57600   // GPS
+  #define SERIAL3_COM_SPEED 115200  // Sonar
 
   /* interleaving delay in micro seconds between 2 readings WMP/NK in a WMP+NK config
   if the ACC calibration time is very long (20 or 30s), try to increase this delay up to 4000
@@ -586,7 +586,7 @@
 
   /************************        continuous gyro calibration        ********************/
   /* Gyrocalibration will be repeated if copter is moving during calibration. */
-  #define GYROCALIBRATIONFAILSAFE
+  //#define GYROCALIBRATIONFAILSAFE
 
   /************************        AP FlightMode        **********************************/
   /*** FUNCTIONALITY TEMPORARY REMOVED
@@ -606,7 +606,7 @@
   PITCH, ROLL and YAW is centered and THROTTLE is set to FAILSAFE_THROTTLE value. You must set this value to descending about 1m/s or so
   for best results. This value is depended from your configuration, AUW and some other params.  Next, after FAILSAFE_OFF_DELAY the copter is disarmed, 
   and motors is stopped. If RC pulse coming back before reached FAILSAFE_OFF_DELAY time, after the small quard time the RC control is returned to normal. */
-  #define FAILSAFE                                // uncomment  to activate the failsafe function
+  //#define FAILSAFE                                // uncomment  to activate the failsafe function
   #define FAILSAFE_DELAY     5                    // Guard time for failsafe activation after signal lost. 1 step = 0.1sec - 1sec in example
   #define FAILSAFE_OFF_DELAY 1000                 // Time for Landing before motors stop in 0.1sec. 1 step = 0.1sec - 20sec in example
   #define FAILSAFE_THROTTLE  (MINTHROTTLE + 200)  // (*) Throttle level used for landing - may be relative to MINTHROTTLE - as in this case
@@ -622,11 +622,11 @@
 
      Please note that FAILSAE_OFF_DELAY is still active for security reasons, so set up long time enough to be able to RTH before this timer ends because motors will stop!!!*/
   
-  #define FAILSAFE_ALT_MODE             // uncomment for descending with constant vario if in Failsafe - use with FAILSAFE and define the FAILSAFE_SLOW_VARIO
+  //#define FAILSAFE_ALT_MODE             // uncomment for descending with constant vario if in Failsafe - use with FAILSAFE and define the FAILSAFE_SLOW_VARIO
 
-  #define FAILSAFE_RTH_MODE             // if GPS present and ready, copter starts RTH when signal lost. When signal is back, control is back again. 
+  //#define FAILSAFE_RTH_MODE             // if GPS present and ready, copter starts RTH when signal lost. When signal is back, control is back again. 
   
-  #define FAILSAFE_AUTOLAND_MODE
+  //#define FAILSAFE_AUTOLAND_MODE
 
 
   /*****************                DFRobot LED RING    *********************************/
@@ -695,7 +695,7 @@
   //#define GPS_PROMINI_SERIAL   // Will Autosense if GPS is connected when ardu boots.
 
   // avoid using 115200 baud because with 16MHz arduino the 115200 baudrate have more than 2% speed error (57600 have 0.8% error)
-  #define GPS_BAUD   115200
+  #define GPS_BAUD   57600
 
   /* GPS protocol 
   NMEA  - Standard NMEA protocol GGA, GSA and RMC  sentences are needed
@@ -752,7 +752,7 @@
 
   // add a 5 element moving average filter to GPS coordinates, helps eliminate gps noise but adds latency comment out to disable
   // use it with NMEA gps only 
-  #define GPS_FILTERING                 //(**)     
+  //#define GPS_FILTERING                 //(**)     
 
   // if we are within this distance to a waypoint then we consider it reached (distance is in cm)
   #define GPS_WP_RADIUS              100      //(**) 
@@ -1022,14 +1022,14 @@
   /**************************************************************************************/
   /* motors will not spin when the throttle command is in low position
   this is an alternative method to stop immediately the motors */
-  //#define MOTOR_STOP
+  #define MOTOR_STOP
 
   /* some radios have not a neutral point centered on 1500. can be changed here */
   #define MIDRC 1500
 
   /***********************         Servo Refreshrates            ***********************/
   /* Default 50Hz Servo refresh rate*/
-  //#define SERVO_RFR_50HZ
+  #define SERVO_RFR_50HZ
 
   /* up to 160Hz servo refreshrate .. works with the most analog servos*/
   //#define SERVO_RFR_160HZ
